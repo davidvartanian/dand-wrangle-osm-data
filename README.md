@@ -1,2 +1,2 @@
-# dand-wrangle-osm-data
-Data Analyst Nanodegree - Wrangle OpenStreetMap Data Project
+# Udacity Data Analyst Nanodegree
+## Wrangling Data - Wrangle OpenStreetMap Data
