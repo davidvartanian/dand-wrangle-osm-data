@@ -194,7 +194,7 @@ class StreetAuditor:
                     return None  # correct street names are ignored here
         return 'Unknown'
 
-    def audit_types(self, filter_tags=('node', 'way'), unknown=False, unknown_ignore=False):
+    def audit_types(self, filter_tags=('node', 'way'), unknown=False):
         """
         Audits all street tags and adds types to a dictionary
         """
@@ -208,7 +208,7 @@ class StreetAuditor:
                     street_count += 1
                     street_type = self.audit_type(tag.attrib['v'])
                     include = set()
-                    if street_type is not None and (unknown_ignore or street_type not in ['Unknown', 'Ignore']):
+                    if street_type is not None and (unknown is True or street_type != 'Unknown'):
                         street_types[street_type].add(tag.attrib['v'])
         filtered = defaultdict(set)
         for stype in street_types:
@@ -216,8 +216,8 @@ class StreetAuditor:
                 filtered[stype] = street_types[stype]
         return {'elements': elem_count, 'streets': street_count, 'types': dict(filtered)}
 
-    def update_name(self, name, mapping):
-        for k in mapping:
+    def update_name(self, name):
+        for k in self.mapping:
             if re.search(k, name, re.IGNORECASE) and re.search(self.mapping[k], name) is None:
                 name = re.sub(k, self.mapping[k]+' ', name, re.IGNORECASE)
         return name
