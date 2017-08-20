@@ -29,6 +29,13 @@ class XmlReader:
             for ee in e.getchildren():
                 tags[ee.tag] += 1
         return tags
+
+    def unique_users(self, limit=None, filter_tags=None):
+        users = set()
+        for e in self.iterate(limit=limit, filter_tags=filter_tags):
+            if 'uid' in e.attrib:
+                users.add(e.attrib['uid'])
+        return users
     
     def iterate(self, limit=None, filter_tags=None, use_cache=True):
         """
