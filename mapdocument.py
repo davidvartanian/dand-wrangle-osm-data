@@ -38,21 +38,24 @@ class MapDocument:
             for t in element.iter('tag'):
                 if problemchars.search(t.attrib['k']):
                     continue
-                elif t.attrib['k'].startswith('addr:'):
+                elif t.attrib['k'].startswith('addr:') or t.attrib['k'] == 'address':
                     if 'address' not in doc:
                         doc['address'] = {}
-                    if t.attrib['k'].count(':') == 1:
+                    if t.attrib['k'] == 'address':
+                        doc['address']['unparsed'] = t.attrib['v']
+                    elif t.attrib['k'].count(':') == 1:
                         addr_type = t.attrib['k'].split(':')[1]
                         if addr_type == 'street' and self.street_auditor is not None:
                             value = self.street_auditor.update_name(t.attrib['v'])
                         else:
                             value = t.attrib['v']
-                        doc['address'][addr_type] = value
-                elif t.attrib['k'].count(':') == 1:
-                    extra_node = t.attrib['k'].split(':')
-                    if extra_node[0] not in doc:
-                        doc[extra_node[0]] = {}
-                    doc[extra_node[0]][extra_node[1]] = t.attrib['v']
+                        try:
+                            doc['address'][addr_type] = value
+                        except TypeError as e:
+                            print(doc['address'], addr_type)
+                else:
+                    key = t.attrib['k'].replace(':', '_')
+                    doc[key] = t.attrib['v']
             if element.tag == 'way':
                 for t in element.iter('nd'):
                     if 'node_refs' not in doc:
