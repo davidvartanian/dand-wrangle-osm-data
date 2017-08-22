@@ -9,6 +9,48 @@ https://mapzen.com/data/metro-extracts/metro/buenos-aires_argentina/
 ## Problems encountered in the Map
 ### Street Type
 I've noticed that normal street names in Argentina don't include *Calle* as part of their names, but other types do. For instance, *Avenida del Libertador* is an avenue. But, what is *Azcuénaga*? Well, it's a normal street. You can assume it because *Calle* is **always** omited.
+Here some examples I've found using abbreviated street types, no matter the structure:
+
+#### Av (Avenida - Avenue)
+* 128 - Av. Hipólito Yrigoyen
+* 316 - Av. 12 de Octubre
+* Av. Doctor Honorio Pueyrredón
+* Av. Dr: Ramos Mejía
+* av 101 n 1661 san martin
+
+#### Ave (Avenida - Avenue)
+* Ave. Fondo de la Legua 425
+* Ave. Scalabrini Ortiz
+* Ave. Scalabrini Ortíz
+
+#### BV (Boulevard)
+* BV DE LOS ITALIANOS
+* BV GDOR MARTIN RODRIGUEZ
+
+#### PJE (Pasaje - Passageway)
+* PJE A MAGALDI
+* PJE DE LA VIA
+* PJE ECHAG?E
+* PJE HILARIO LAGOS
+* PJE TARIJA
+
+#### Calle (Street, type omitted in street name)
+* 525
+* Edison
+* Escalada
+* Lafinur
+* Marcelo T. de Alvear
+
+#### Applying Street Type Cleaning
+| Before | After |
+|--------|-------|
+|Avenda Avellaneda|Avenida Avellaneda|
+|Cno. Belgrano e/ 473 bis y 474|Camino Belgrano e/ 473 bis y 474|
+|Cno. Centenario y 461e|Camino Centenario y 461e|
+|Ave. Scalabrini Ortíz|Avenida Scalabrini Ortíz|
+|BV GDOR MARTIN RODRIGUEZ|Boulevard GDOR MARTIN RODRIGUEZ|
+|Au Pres. H. Cámpora|Autopista Pres. H. Cámpora|
+
 
 ### Numbers as street names
 In general, streets in Argentina are named after former militar or political leaders, as well as country names, or even dates of important events. However, some cities use only numbers as street names. Others, though, use number and name. For instance, *43* (just the number) or *Avenida 13* (an avenue), or a more complex structure, *900 - General Juan Lavalle*.
