@@ -115,26 +115,24 @@ class StreetAuditor:
         self.common_street_prefix_re = re.compile(r'^(%s)\s' % '|'.join(self.prefix_streets), re.IGNORECASE)
         self.expected = ["Avenida", "Boulevard", "Calle", "Pasaje", "Camino", "Acceso", "Autovía",
                          "Colectora", "Diagonal", "Ruta Nacional", "Ruta Provincial", 'Autopista']
-        self.mapping = { "Av. ": "Avenida",
+        self.mapping = { "Av": "Avenida",
                          "Ave": "Avenida",
-                         "Ave. ": "Avenida",
-                         "Av ": "Avenida",
-                         "AV ": "Avenida",
-                         "av ": "Avenida",
-                         "Au ": "Autopista",
-                         "Avda ": "Avenida",
-                         "Avda. ": "Avenida",
-                         "BV ": "Boulevard",
-                         "PJE ": "Pasaje",
-                         "Pje. ": "Pasaje",
-                         "Cno ": "Camino",
-                         "Cno. ": "Camino",
-                         "Cmno ": "Camino",
-                         "Cno. ": "Camino",
-                         "Diag ": "Diagonal",
-                         "Diag. ": "Diagonal",
-                         "RN ": "Ruta Nacional",
-                         "RP ": "Ruta Provincial"}
+                         "Avenda": "Avenida",
+                         "Avendida": "Avenida",
+                         "AV": "Avenida",
+                         "av": "Avenida",
+                         "Au": "Autopista",
+                         "Avda": "Avenida",
+                         "Avda": "Avenida",
+                         "BV": "Boulevard",
+                         "PJE": "Pasaje",
+                         "Pje": "Pasaje",
+                         "Cno": "Camino",
+                         "Cmno": "Camino",
+                         "Cno": "Camino",
+                         "Diag": "Diagonal",
+                         "RN": "Ruta Nacional",
+                         "RP": "Ruta Provincial"}
 
     def audit_type(self, street_name):
         """
@@ -194,11 +192,12 @@ class StreetAuditor:
                     return None  # correct street names are ignored here
         return 'Unknown'
 
-    def audit_types(self, filter_tags=('node', 'way'), unknown=False):
+    def audit_types(self, filter_tags=('node', 'way'), unknown=False, limit_per_type=None, include_updates=False):
         """
         Audits all street tags and adds types to a dictionary
         """
         street_types = defaultdict(set)
+        updates = []
         elem_count = 0
         street_count = 0
         for elem in self.xml_reader.iterate(filter_tags=filter_tags):
@@ -209,15 +208,27 @@ class StreetAuditor:
                     street_type = self.audit_type(tag.attrib['v'])
                     include = set()
                     if street_type is not None and (unknown is True or street_type != 'Unknown'):
-                        street_types[street_type].add(tag.attrib['v'])
+                        if limit_per_type is None or len(street_types[street_type]) < limit_per_type:
+                            street_types[street_type].add(tag.attrib['v'].strip())
+                            if include_updates:
+                                updated_name = self.update_name(tag.attrib['v'].strip())
+                                if updated_name != tag.attrib['v'].strip():
+                                    updates.append((tag.attrib['v'].strip(), updated_name))
+                                #else:
+                                    #print('updated:', updated_name)
         filtered = defaultdict(set)
         for stype in street_types:
             if len(street_types[stype]) > 1:
                 filtered[stype] = street_types[stype]
-        return {'elements': elem_count, 'streets': street_count, 'types': dict(filtered)}
+        output = {'elements': elem_count, 'streets': street_count, 'types': dict(filtered)}
+        if include_updates:
+            output['updates'] = updates
+        return output
 
     def update_name(self, name):
-        for k in self.mapping:
-            if re.search(k, name, re.IGNORECASE) and re.search(self.mapping[k], name) is None:
-                name = re.sub(k, self.mapping[k]+' ', name, re.IGNORECASE)
-        return name
+        newname = name
+        for k in self.mapping.keys():
+            pattern = r'^'+k+'\.?\s'
+            if re.match(pattern, name, re.IGNORECASE):
+                newname = re.sub(pattern, self.mapping[k]+' ', name, re.IGNORECASE)
+        return newname
