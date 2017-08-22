@@ -18,15 +18,6 @@ Here some examples I've found using abbreviated street types, no matter the stru
 * Av. Dr: Ramos Mejía
 * av 101 n 1661 san martin
 
-#### Ave (Avenida - Avenue)
-* Ave. Fondo de la Legua 425
-* Ave. Scalabrini Ortiz
-* Ave. Scalabrini Ortíz
-
-#### BV (Boulevard)
-* BV DE LOS ITALIANOS
-* BV GDOR MARTIN RODRIGUEZ
-
 #### PJE (Pasaje - Passageway)
 * PJE A MAGALDI
 * PJE DE LA VIA
@@ -41,6 +32,25 @@ Here some examples I've found using abbreviated street types, no matter the stru
 * Lafinur
 * Marcelo T. de Alvear
 
+### Numbers as street names
+In general, streets in Argentina are named after former militar or political leaders, as well as country names, or even dates of important events. However, some cities use only numbers as street names. Others, though, use number and name. For instance, *43* (just the number) or *Avenida 13* (an avenue), or a more complex structure, *900 - General Juan Lavalle*.
+
+### Complexity does not mean problem
+After auditing all streets contained in *way* tags I could not find any technical problem. It seems that someone else have done this job before. Instead, there were many irregularities on street names contained in *node* tags. That's why I decided to audit both *nodes* and *ways*. Although it's been quite complex to identify street types from street names due to the different existent structures.
+
+### Street Auditing Results
+Given the complexity on street names, I created this function using a mapping dictionary to update street names:
+
+```python
+def update_name(self, name):
+    newname = name
+    for k in self.mapping.keys():
+        pattern = r'^'+k+'\.?\s'
+        if re.match(pattern, name, re.IGNORECASE):
+            newname = re.sub(pattern, self.mapping[k]+' ', name, re.IGNORECASE)
+    return newname
+```
+
 #### Applying Street Type Cleaning
 | Before | After |
 |--------|-------|
@@ -51,12 +61,6 @@ Here some examples I've found using abbreviated street types, no matter the stru
 |BV GDOR MARTIN RODRIGUEZ|Boulevard GDOR MARTIN RODRIGUEZ|
 |Au Pres. H. Cámpora|Autopista Pres. H. Cámpora|
 
-
-### Numbers as street names
-In general, streets in Argentina are named after former militar or political leaders, as well as country names, or even dates of important events. However, some cities use only numbers as street names. Others, though, use number and name. For instance, *43* (just the number) or *Avenida 13* (an avenue), or a more complex structure, *900 - General Juan Lavalle*.
-
-### Complexity does not mean problem
-After auditing all streets contained in *way* tags I could not find any technical problem. It seems that someone else have done this job before. Instead, there were many irregularities on street names contained in *node* tags. That's why I decided to audit both *nodes* and *ways*. Although it's been quite complex to identify street types from street names due to the different existent structures.
 
 ## Data Overview
 ### Basic statistical overview
@@ -201,10 +205,9 @@ These are the most frequent users in this particular dataset:
 
 
 ## Additional Ideas
-I've spent some time trying to rank fields. Not including *pos*, *address* or *name*, what other fields could be useful to pay more attention to?
+Street names in Argentina are complex due to omissions and the structure using only numbers, combined with names, or event dates. I spent some time creating a list to filter possible street names not referring to street types, what you can see in [audit.py](audit.py) file.
 
-Since documents don't have a declared schema, it's common to find documents with different structure in the same collection. Running this map reduce command found [here](https://stackoverflow.com/a/2308036/3456290) in the MongoDB console I've found 764 possible keys, filtering by documents with type *node*:
-
+Since documents don't have a declared schema, it's common to find documents with different structure in the same collection. Running this map reduce command found [here](https://stackoverflow.com/a/2308036/3456290) in the MongoDB console, I've found 764 possible keys, filtering by documents with type *node*:
 
 ```
 > mr = db.runCommand({
@@ -245,15 +248,25 @@ Since documents don't have a declared schema, it's common to find documents with
 ]
 ```
 
-Given the large amount of possible keys, it would be a better idea to filter those documents having only basic keys: [_id, type, id, pos, created]:
+Given the large amount of possible keys, it would be a better idea to filter those documents having only basic keys [_id, type, id, pos, created]:
 
 ```
 > db.buenosaires.find({"$where": "for (k in this) { if (this.type == 'node' && ['_id','type','id','pos','created'].indexOf(k)!==-1) { return false;}} return this;"}).count()
 338018
 ```
 
-Now I'm sure that almost 22% of documents are not eligible to be classified. I conclude this because it's not possible to classify an element based on its position, creation information or id. So some further action should be taken with these documents, like encouraging contributors to add more accurate information. Although this query is quite expensive, since it runs javascript code for each element in the loop.
+Now I'm sure that almost 22% of *nodes* are not eligible to be classified. I conclude this because it's not possible to classify an element based on its position, creation information or id. So some further action should be taken with these documents, like encouraging contributors to add more accurate information. Although this query is quite expensive, since it runs javascript code for each element in the loop.
 
+Since 22% of *nodes* are just points in the map without any further information, I think it would be a good idea to encourage contributing users to provide more information. 
 
-## Conclusion
-Street names in Argentina are complex due to omissions and the structure using only numbers, combined with names, or event dates. I spent some time creating a list to filter possible street names not referring to street types, what you can see in [audit.py](audit.py) file.
+### Gamification
+I've seen the idea of *gamification* before. I support this idea and will give a reason why. I believe that *motivation* is our biggest inner engine. On the other hand, rewards produce motivation. That's what gamification does. A simple progress bar, level badges, public recognition or even some virtual/real prizes can help a lot to improve OpenStreetMap Project significantly.
+
+### Making things easier
+I would help a lot improving forms with better help texts and predictive algorithms to suggest values on certain fields. For instance, suggesting the type of amenity based on the name and location (what's the probability of this place to be a restaurant if in the same area 85% or nodes are also restaurants?). I've found that helping to fill out *amenity* and *shop* fields would help much more than other fields.
+
+### End-users don't look for empty nodes
+We all are also end-users. What do we expect when we look for something in our map application? I want to find that café where delicious muffins are sold, or ATM accepting international cards, grocery, and so on. Detailed information that would be very useful to find. So, I think this is the challenge: to guide contributing users to be helpful for end-users.
+
+# Conclusion
+After analysing, cleaning, and identifying problems and possible solutions, there is still much more to do. Not only to encourage contributing users (or end-users to become contributors) to enter more data. I think that another solution could be to generate data automatically using machine learning algorithms, the same way a *recommender system* could work, but for *nodes*, and asking contributing users to review.
